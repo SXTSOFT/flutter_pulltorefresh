@@ -371,14 +371,15 @@ class RenderSliverLoading extends RenderSliverSingleBoxAdapter {
       }
       sliverP = viewport.childAfter(sliverP);
     }
-    return totalScrollExtent >= cons.viewportMainAxisExtent;
+    // consider about footer layoutExtent,it should be subtracted it's height
+    return totalScrollExtent >= cons.viewportMainAxisExtent - layoutExtent;
   }
 
   //  many sitiuation: 1. reverse 2. not reverse
   // 3. follow content 4. unfollow content
   //5. not full 6. full
-  double computePaintOrigin(double layoutExtent, bool reverse) {
-    if (_computeIfFull(constraints) || shouldFollowContent) {
+  double computePaintOrigin(double layoutExtent, bool reverse, bool follow) {
+    if (follow) {
       if (reverse) {
         return layoutExtent;
       }
@@ -407,7 +408,6 @@ class RenderSliverLoading extends RenderSliverSingleBoxAdapter {
       return;
     }
     bool active;
-
     if (hideWhenNotFull && mode != LoadStatus.noMore) {
       active = _computeIfFull(constraints);
     } else {
@@ -442,7 +442,8 @@ class RenderSliverLoading extends RenderSliverSingleBoxAdapter {
                 ? layoutExtent
                 : 0.0,
             constraints.axisDirection == AxisDirection.up ||
-                constraints.axisDirection == AxisDirection.left),
+                constraints.axisDirection == AxisDirection.left,
+            _computeIfFull(constraints) || shouldFollowContent),
         cacheExtent: cacheExtent,
         maxPaintExtent: childExtent,
         hitTestExtent: paintedChildSize,

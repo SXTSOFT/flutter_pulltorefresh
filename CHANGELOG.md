@@ -307,3 +307,20 @@ other:
 * add requestTwoLevel method in RefreshController
 * add endLoading,readyToLoad for CustomFooter
 * add ScrollView's props to SmartRefresher,mostly for SingleChildView not ScrollView
+
+
+## 1.5.6
+* add new feature:refresh localizations
+* The footer layout size should be added to calculate whether the Viewport is full of a screen
+* fix physics check error when theme use other platform
+* add topHitBoundary,bottomHitBoundary in RefreshConfiguration
+* move headerOffset from RefreshConfiguration,move to indicator setting
+* In Android systems,default change: fast fling will be stopped in 0 pixels
+* Optimized part indicator,auto attach primaryColor from Theme,text style adjust etc..
+* Optimize requestRefresh() and requestLoading(),avoid spring back when far from target point,add one parameter controll whether to move down or top
+
+## 1.5.7
+* add three national language: French,Russian,...
+* fix endLoading logic error in callback
+* add enableLoadMoreWhenNoMoreData,enable switch to decide whether auto load more when footer state is noMore
+* fix requestRefresh callback onRefresh immediately

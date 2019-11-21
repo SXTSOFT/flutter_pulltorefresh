@@ -4,6 +4,7 @@
  * Time: 2019/5/19 下午9:23
  */
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart'
     hide RefreshIndicator, RefreshIndicatorState;
 import 'package:flutter/widgets.dart';
@@ -33,17 +34,19 @@ class MaterialClassicHeader extends RefreshIndicator {
 
   const MaterialClassicHeader({
     Key key,
-    height: 80.0,
+    double height: 80.0,
     this.semanticsLabel,
     this.semanticsValue,
     this.color,
+    double offset: 0,
     this.distance: 50.0,
     this.backgroundColor,
   }) : super(
-          key: key,
-          refreshStyle: RefreshStyle.Front,
-          height: height,
-        );
+    key: key,
+    refreshStyle: RefreshStyle.Front,
+    offset: offset,
+    height: height,
+  );
 
   @override
   State<StatefulWidget> createState() {
@@ -72,7 +75,8 @@ class _MaterialClassicHeaderState
         upperBound: 1.0,
         duration: Duration(milliseconds: 500));
     _valueAni.addListener(() {
-      if (mounted) setState(() {});
+      // frequently setState will decline the performance
+      if (mounted&&Scrollable.of(context).position.pixels<=0) setState(() {});
     });
     _positionController =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));
@@ -90,6 +94,10 @@ class _MaterialClassicHeaderState
   @override
   Widget buildContent(BuildContext context, RefreshStatus mode) {
     // TODO: implement buildContent
+    return _buildIndicator(widget.backgroundColor ?? Colors.white);
+  }
+
+  Widget _buildIndicator(Color outerColor) {
     return SlideTransition(
       child: ScaleTransition(
         scale: _scaleFactor,
@@ -102,7 +110,7 @@ class _MaterialClassicHeaderState
             semanticsValue: widget?.semanticsValue,
             value: floating ? null : _valueAni.value,
             valueColor: _valueColor,
-            backgroundColor: widget.backgroundColor,
+            backgroundColor: outerColor,
           ),
         ),
       ),
@@ -120,6 +128,16 @@ class _MaterialClassicHeaderState
   }
 
   @override
+  void onModeChange(RefreshStatus mode) {
+    // TODO: implement onModeChange
+    if (mode == RefreshStatus.refreshing) {
+      _positionController.value = widget.distance / widget.height;
+      _scaleFactor.value = 1;
+    }
+    super.onModeChange(mode);
+  }
+
+  @override
   void resetValue() {
     // TODO: implement resetValue
     _scaleFactor.value = 1.0;
@@ -133,8 +151,16 @@ class _MaterialClassicHeaderState
     final ThemeData theme = Theme.of(context);
     _valueColor = _positionController.drive(
       ColorTween(
-        begin: (widget.color ?? theme.accentColor).withOpacity(0.0),
-        end: (widget.color ?? theme.accentColor).withOpacity(1.0),
+        begin: (widget.color ??
+            theme?.primaryColor ??
+            CupertinoTheme.of(context)?.primaryColor ??
+            Colors.blueAccent)
+            .withOpacity(0.0),
+        end: (widget.color ??
+            theme?.primaryColor ??
+            CupertinoTheme.of(context)?.primaryColor ??
+            Colors.blueAccent)
+            .withOpacity(1.0),
       ).chain(
           CurveTween(curve: const Interval(0.0, 1.0 / _kDragSizeFactorLimit))),
     );
@@ -169,17 +195,19 @@ class WaterDropMaterialHeader extends MaterialClassicHeader {
     Key key,
     String semanticsLabel,
     double distance: 60.0,
+    double offset: 0,
     String semanticsValue,
     Color color: Colors.white,
-    Color backgroundColor: Colors.blueAccent,
+    Color backgroundColor,
   }) : super(
-            key: key,
-            height: 80.0,
-            color: color,
-            distance: distance,
-            backgroundColor: backgroundColor,
-            semanticsValue: semanticsValue,
-            semanticsLabel: semanticsLabel);
+      key: key,
+      height: 80.0,
+      color: color,
+      distance: distance,
+      offset: offset,
+      backgroundColor: backgroundColor,
+      semanticsValue: semanticsValue,
+      semanticsLabel: semanticsLabel);
 
   @override
   State<StatefulWidget> createState() {
@@ -213,16 +241,28 @@ class _WaterDropMaterialHeaderState extends _MaterialClassicHeaderState {
   }
 
   @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    super.didChangeDependencies();
+    _valueColor = _positionController.drive(
+      ColorTween(
+        begin: (Colors.white).withOpacity(0.0),
+        end: (Colors.white).withOpacity(1.0),
+      ).chain(
+          CurveTween(curve: const Interval(0.0, 1.0 / _kDragSizeFactorLimit))),
+    );
+  }
+
+  @override
   Future<void> readyToRefresh() {
     // TODO: implement readyToRefresh
     _bezierController.value = 1.01;
     _showWater = true;
     _bezierController.animateTo(1.5,
         curve: Curves.bounceOut, duration: Duration(milliseconds: 550));
-
     return _positionController
         .animateTo(widget.distance / widget.height,
-            curve: Curves.bounceOut, duration: Duration(milliseconds: 550))
+        curve: Curves.bounceOut, duration: Duration(milliseconds: 550))
         .then((_) {
       _showWater = false;
     });
@@ -259,7 +299,7 @@ class _WaterDropMaterialHeaderState extends _MaterialClassicHeaderState {
       _valueAni.value = _bezierController.value;
       _positionController.value = _bezierController.value * 0.3;
       _scaleFactor.value =
-          offset < 40.0 ? 0.0 : (_bezierController.value - 0.5) * 2 + 0.5;
+      offset < 40.0 ? 0.0 : (_bezierController.value - 0.5) * 2 + 0.5;
     }
   }
 
@@ -271,16 +311,26 @@ class _WaterDropMaterialHeaderState extends _MaterialClassicHeaderState {
         children: <Widget>[
           CustomPaint(
             painter: _BezierPainter(
-                listener: _bezierController, color: widget.backgroundColor),
+                listener: _bezierController,
+                color: widget.backgroundColor ??
+                    Theme.of(context)?.primaryColor ??
+                    CupertinoTheme.of(context)?.primaryColor ??
+                    Colors.blueAccent),
             child: Container(),
           ),
           CustomPaint(
-            child: super.buildContent(context, mode),
+            child: _buildIndicator(widget.backgroundColor ??
+                Theme.of(context)?.primaryColor ??
+                CupertinoTheme.of(context)?.primaryColor ??
+                Colors.blueAccent),
             painter: _showWater
                 ? _WaterPainter(
-                    ratio: widget.distance / widget.height,
-                    color: widget.backgroundColor,
-                    listener: _positionFactor)
+                ratio: widget.distance / widget.height,
+                color: widget.backgroundColor ??
+                    Theme.of(context)?.primaryColor ??
+                    CupertinoTheme.of(context)?.primaryColor ??
+                    Colors.blueAccent,
+                listener: _positionFactor)
                 : null,
           )
         ],

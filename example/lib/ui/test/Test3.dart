@@ -11,8 +11,7 @@ class Test3 extends StatefulWidget {
   Test3State createState() => Test3State();
 }
 
-class Test3State extends State<Test3>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+class Test3State extends State<Test3> with TickerProviderStateMixin {
 //  RefreshMode  refreshing = RefreshMode.idle;
 //  LoadMode loading = LoadMode.idle;
   ValueNotifier<double> topOffsetLis = ValueNotifier(0.0);
@@ -125,7 +124,7 @@ class Test3State extends State<Test3>
 //    });
     _getDatas();
     _refreshController = RefreshController(
-        initialRefresh: false, initialLoadStatus: LoadStatus.idle);
+        initialRefresh: false, initialLoadStatus: LoadStatus.noMore);
     _animationController = AnimationController(vsync: this);
     super.initState();
   }
@@ -159,64 +158,57 @@ class Test3State extends State<Test3>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Expanded(
-          child: RefreshConfiguration.copyAncestor(
-            context: context,
-            child: SmartRefresher(
-              enablePullUp: true,
-              enablePullDown: true,
-              controller: _refreshController,
-              header: TwoLevelHeader(
-                twoLevelWidget: Center(
-                  child: Container(
-                    color: Colors.green,
-                    width: double.infinity,
-                    child: Text("twoLevel"),
-                    height: 60,
-                  ),
-                ),
-              ),
-              footer: null,
-              onRefresh: () async {
-                print("onRefresh");
-                await Future.delayed(const Duration(milliseconds: 3000));
-                data.add(Container(
-                  child: Card(),
-                  height: 100.0,
-                ));
-                if (mounted) setState(() {});
-                _refreshController.refreshCompleted();
+    return RefreshConfiguration.copyAncestor(
+      context: context,
+      footerTriggerDistance: -80,
+      maxUnderScrollExtent: 60,
+      enableLoadingWhenNoData: true,
+      child: SmartRefresher(
+        enablePullUp: true,
+        enablePullDown: true,
+        controller: _refreshController,
+        footer: ClassicFooter(
+          height: 60,
+          loadStyle: LoadStyle.ShowWhenLoading,
+        ),
+        header: TwoLevelHeader(
+          twoLevelWidget: Center(
+            child: Container(
+              color: Colors.green,
+              width: double.infinity,
+              child: Text("twoLevel"),
+              height: 60,
+            ),
+          ),
+        ),
+        onRefresh: () async {
+          print("onRefresh");
+          await Future.delayed(const Duration(milliseconds: 3000));
+          data.add(Container(
+            child: Card(),
+            height: 100.0,
+          ));
+          if (mounted) setState(() {});
+          _refreshController.refreshCompleted();
 //        Future.delayed(const Duration(milliseconds: 2009)).then((val) {
 //          data.add(Card());
 //
 //        });
-              },
-              child: ListView(
-                physics: ClampingScrollPhysics(),
-                children: <Widget>[
-                  Text("Asdsad"),
-                  Text("Asdsad"),
-                  Text("Asdsad"),
-                  Text("Asdsad"),
-                  Text("Asdsad"),
-                  Text("Asdsad"),
-                  Text("Asdsad"),
-                  Text("Asdsad"),
-                  Text("Asdsad"),
-                ],
-              ),
-              onLoading: () async {
-                await Future.delayed(const Duration(milliseconds: 1000));
-                print("onLoading");
-                _refreshController.loadComplete();
-              },
-            ),
-            dragSpeedRatio: 0.9,
+        },
+        child: ListView.builder(
+          itemBuilder: (c, i) => Container(
+            color: Colors.lightGreen,
           ),
-        )
-      ],
+          itemCount: 50,
+          itemExtent: 50,
+        ),
+        onLoading: () async {
+          await Future.delayed(const Duration(milliseconds: 1000));
+          print("onLoading");
+          _refreshController.loadNoData();
+        },
+      ),
+      dragSpeedRatio: 0.9,
     );
   }
 

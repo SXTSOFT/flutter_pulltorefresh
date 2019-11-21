@@ -16,6 +16,9 @@ enum TwoLevelDisplayAlignment { fromTop, fromCenter, fromBottom }
 /// the behaviour just like TaoBao,XieCheng(携程) App TwoLevel
 ///
 /// just a example
+///
+/// ```dart
+///
 ///TwoLevelHeader(
 ///  textStyle: TextStyle(color: Colors.white),
 ///  displayAlignment: TwoLevelDisplayAlignment.fromTop,
@@ -49,6 +52,8 @@ enum TwoLevelDisplayAlignment { fromTop, fromCenter, fromBottom }
 ///),
 ///),
 ///);
+///
+/// ```
 class TwoLevelHeader extends StatelessWidget {
   /// this  attr mostly put image or color
   final BoxDecoration decoration;
@@ -89,13 +94,13 @@ class TwoLevelHeader extends StatelessWidget {
       this.displayAlignment: TwoLevelDisplayAlignment.fromBottom,
       this.completeDuration: const Duration(milliseconds: 600),
       this.textStyle: const TextStyle(color: const Color(0xff555555)),
-      this.releaseText: 'Refresh when release',
-      this.refreshingText: 'Refreshing...',
+      this.releaseText,
+      this.refreshingText,
       this.canTwoLevelIcon,
-      this.canTwoLevelText: 'release to enter secondfloor',
-      this.completeText: 'Refresh complete',
-      this.failedText: 'Refresh failed',
-      this.idleText: 'Pull down to refresh',
+      this.canTwoLevelText,
+      this.completeText,
+      this.failedText,
+      this.idleText,
       this.iconPos: IconPosition.left,
       this.spacing: 15.0,
       this.refreshingIcon,

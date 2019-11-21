@@ -26,12 +26,16 @@ abstract class RefreshIndicator extends StatefulWidget {
   /// the visual extent indicator
   final double height;
 
+  //layout offset
+  final double offset;
+
   /// the stopped time when refresh complete or fail
   final Duration completeDuration;
 
   const RefreshIndicator(
       {Key key,
       this.height: 60.0,
+      this.offset: 0.0,
       this.completeDuration: const Duration(milliseconds: 500),
       this.refreshStyle: RefreshStyle.Follow})
       : super(key: key);
@@ -270,6 +274,7 @@ abstract class RefreshIndicatorState<T extends RefreshIndicator>
       }
       if (refresher.onRefresh != null) refresher.onRefresh();
     } else if (mode == RefreshStatus.twoLevelOpening) {
+      floating = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         activity.resetActivity();
@@ -308,7 +313,7 @@ abstract class RefreshIndicatorState<T extends RefreshIndicator>
   @override
   Widget build(BuildContext context) {
     return SliverRefresh(
-        paintOffsetY: configuration.headerOffset,
+        paintOffsetY: widget.offset,
         child: RotatedBox(
           child: buildContent(context, mode),
           quarterTurns:
@@ -359,24 +364,20 @@ abstract class LoadIndicatorState<T extends LoadIndicator> extends State<T>
     if (!floating) {
       return;
     }
-    if(_position.outOfRange){
-      endLoading().then((_) {
-        if (!mounted) {
-          return;
+    endLoading().then((_) {
+      if (!mounted) {
+        return;
+      }
+      _enableLoading = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_position.outOfRange) {
+          activity.delegate.goBallistic(0);
         }
-        if (_position.outOfRange) activity.delegate.goBallistic(0);
-        setState(() {
-          floating = false;
-        });
       });
-    }
-    else{
       setState(() {
         floating = false;
       });
-    }
-
-
+    });
   }
 
   bool _checkIfCanLoading() {
@@ -390,7 +391,9 @@ abstract class LoadIndicatorState<T extends LoadIndicator> extends State<T>
       if (!configuration.enableLoadingWhenFailed && mode == LoadStatus.failed) {
         return false;
       }
-      // this check to ScrollDirection.forward ,because in NestedScrollView return idle,I don't knot why design to idle
+      if (!configuration.enableLoadingWhenNoData && mode == LoadStatus.noMore) {
+        return false;
+      }
       if (mode != LoadStatus.canLoading &&
           _position.userScrollDirection == ScrollDirection.forward) {
         return false;
@@ -404,8 +407,11 @@ abstract class LoadIndicatorState<T extends LoadIndicator> extends State<T>
     if (!mounted || _isHide) {
       return;
     }
+
     update();
-    if (mode == LoadStatus.idle || mode == LoadStatus.failed) {
+    if (mode == LoadStatus.idle ||
+        mode == LoadStatus.failed ||
+        mode == LoadStatus.noMore) {
       lastMode = mode;
       finishLoading();
     }
@@ -426,11 +432,7 @@ abstract class LoadIndicatorState<T extends LoadIndicator> extends State<T>
   }
 
   void _dispatchModeByOffset(double offset) {
-    if (!mounted ||
-        _isHide ||
-        LoadStatus.noMore == mode ||
-        LoadStatus.loading == mode ||
-        floating) {
+    if (!mounted || _isHide || LoadStatus.loading == mode || floating) {
       return;
     }
     if (activity is DragScrollActivity) {
@@ -459,12 +461,9 @@ abstract class LoadIndicatorState<T extends LoadIndicator> extends State<T>
   }
 
   void _listenScrollEnd() {
-
     if (!_position.isScrollingNotifier.value) {
       // when user release gesture from screen
-      if (_isHide ||
-          mode == LoadStatus.loading ||
-          mode == LoadStatus.noMore ) {
+      if (_isHide || mode == LoadStatus.loading || mode == LoadStatus.noMore) {
         return;
       }
 
@@ -486,6 +485,13 @@ abstract class LoadIndicatorState<T extends LoadIndicator> extends State<T>
     _position?.isScrollingNotifier?.removeListener(_listenScrollEnd);
     newPosition?.isScrollingNotifier?.addListener(_listenScrollEnd);
     super._onPositionUpdated(newPosition);
+  }
+
+  @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    super.didChangeDependencies();
+    lastMode = mode;
   }
 
   @override

@@ -68,7 +68,7 @@ void testRequestFun(bool full) {
     await tester.pumpAndSettle(Duration(milliseconds: 2000));
     _refreshController.position.jumpTo(0);
     _refreshController.requestTwoLevel();
-    await tester.pumpAndSettle();
+    await tester.pumpAndSettle(Duration(milliseconds: 200));
     expect(_refreshController.headerStatus, RefreshStatus.twoLeveling);
     _refreshController.twoLevelComplete();
     await tester.pumpAndSettle();
@@ -84,43 +84,6 @@ void main() {
 
     expect(_refreshController.headerMode.value, RefreshStatus.idle);
 
-    expect(_refreshController.footerMode.value, LoadStatus.noMore);
-  });
-
-  testWidgets("check RefreshController function if valid", (tester) async {
-    final RefreshController _refreshController = RefreshController();
-
-    await tester.pumpWidget(buildRefresher(_refreshController));
-
-    _refreshController.headerMode.value = RefreshStatus.refreshing;
-    _refreshController.refreshCompleted();
-    expect(_refreshController.headerMode.value, RefreshStatus.completed);
-
-    _refreshController.headerMode.value = RefreshStatus.refreshing;
-    _refreshController.refreshFailed();
-    expect(_refreshController.headerMode.value, RefreshStatus.failed);
-
-    _refreshController.headerMode.value = RefreshStatus.refreshing;
-    _refreshController.refreshToIdle();
-    expect(_refreshController.headerMode.value, RefreshStatus.idle);
-
-    _refreshController.headerMode.value = RefreshStatus.refreshing;
-    _refreshController.refreshToIdle();
-    expect(_refreshController.headerMode.value, RefreshStatus.idle);
-
-    _refreshController.footerMode.value = LoadStatus.loading;
-    _refreshController.loadComplete();
-    await tester.pump(Duration(milliseconds: 200));
-    expect(_refreshController.footerMode.value, LoadStatus.idle);
-
-    _refreshController.footerMode.value = LoadStatus.loading;
-    _refreshController.loadFailed();
-    await tester.pump(Duration(milliseconds: 200));
-    expect(_refreshController.footerMode.value, LoadStatus.failed);
-
-    _refreshController.footerMode.value = LoadStatus.loading;
-    _refreshController.loadNoData();
-    await tester.pump(Duration(milliseconds: 200));
     expect(_refreshController.footerMode.value, LoadStatus.noMore);
   });
 

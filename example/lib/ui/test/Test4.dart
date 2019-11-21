@@ -173,23 +173,50 @@ class Test4State extends State<Test4>
         enablePullDown: true,
         builder: (context, physics) {
           return CustomScrollView(physics: physics, slivers: [
-            ClassicHeader(),
+            MaterialClassicHeader(),
             SliverAppBar(),
             SliverToBoxAdapter(
-              child: Container(
-                height: 2000,
-                color: Colors.red,
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    height: 3000,
+                    color: Colors.red,
+                  ),
+                  Center(
+                    child: Row(
+                      children: <Widget>[
+                        RaisedButton(
+                          child: Text("主动刷新(移动)"),
+                          onPressed: () {
+                            _refreshController.requestRefresh();
+                          },
+                        ),
+                        RaisedButton(
+                          child: Text("主动加载"),
+                          onPressed: () {
+                            _refreshController.requestLoading();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    height: 3000,
+                    color: Colors.red,
+                  ),
+                ],
               ),
             ),
             ClassicFooter(),
           ]);
         },
         onRefresh: () async {
-          await Future.delayed(Duration(milliseconds: 1000));
+          print("onRefresh");
+          await Future.delayed(Duration(milliseconds: 1300));
           _refreshController.refreshCompleted();
         },
         onLoading: () async {
-          await Future.delayed(Duration(milliseconds: 1000));
+          await Future.delayed(Duration(milliseconds: 1300));
           _refreshController.loadComplete();
         },
         controller: _refreshController,

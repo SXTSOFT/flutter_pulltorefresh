@@ -35,7 +35,7 @@
 ```yaml
 
    dependencies:
-     pull_to_refresh: ^1.5.5
+     pull_to_refresh: ^1.5.7
 
 ```
 
@@ -93,7 +93,7 @@
             else if(mode == LoadStatus.failed){
               body = Text("加载失败！点击重试！");
             }
-            else if(mode == LoadStatus.canLoad){
+            else if(mode == LoadStatus.canLoading){
                body = Text("松手,加载更多!");
             }
             else{
@@ -150,6 +150,30 @@
 
 ```
 
+1.5.6新增国际化处理特性,你可以在MaterialApp或者CupertinoApp追加如下代码:
+
+```dart
+
+    MaterialApp(
+            localizationsDelegates: [
+              // 这行是关键
+              RefreshLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate
+            ],
+            supportedLocales: [
+              const Locale('en'),
+              const Locale('zh'),
+            ],
+            localeResolutionCallback:
+                (Locale locale, Iterable<Locale> supportedLocales) {
+              //print("change language");
+              return locale;
+            },
+    )
+
+```
+
 
 
 ## 截图
@@ -171,8 +195,8 @@
 
 | 下拉刷新风格 |   |上拉加载风格| |
 |:---:|:---:|:---:|:---:|
-| ![跟随](example/images/refreshstyle1.gif)| ![不跟随](example/images/refreshstyle2.gif)| ![永远显示](example/images/loadstyle1.gif) | ![永远隐藏](example/images/loadstyle2.gif)|
-| ![背部](example/images/refreshstyle3.gif)| ![前面悬浮](example/images/refreshstyle4.gif)| ![当加载中才显示,其它隐藏](example/images/loadstyle3.gif) | |
+| RefreshStyle.Follow <br> ![跟随](example/images/refreshstyle1.gif) |RefreshStyle.UnFollow <br>  ![不跟随](example/images/refreshstyle2.gif)| LoadStyle.ShowAlways <br> ![永远显示](example/images/loadstyle1.gif) | LoadStyle.HideAlways<br>  ![永远隐藏](example/images/loadstyle2.gif)|
+| RefreshStyle.Behind <br> ![背部](example/images/refreshstyle3.gif)| RefreshStyle.Front <br> ![前面悬浮](example/images/refreshstyle4.gif)| LoadStyle.ShowWhenLoading<br> ![当加载中才显示,其它隐藏](example/images/loadstyle3.gif) | |
 
 |Style| [ClassicIndicator](https://github.com/peng8350/flutter_pulltorefresh/blob/master/lib/src/indicator/classic_indicator.dart) | [WaterDropHeader](https://github.com/peng8350/flutter_pulltorefresh/blob/master/lib/src/indicator/waterdrop_header.dart) | [MaterialClassicHeader](https://github.com/peng8350/flutter_pulltorefresh/blob/master/lib/src/indicator/material_indicator.dart) |
 |:---:|:---:|:---:|:---:|
@@ -242,7 +266,7 @@
 
 
 ## 更多
-- [属性文档](refresher_controller.md) 或者 [Api/Doc](https://pub.dev/documentation/pull_to_refresh/latest/pulltorefresh/SmartRefresher-class.html)
+- [属性文档](propertys.md) 或者 [Api/Doc](https://pub.dev/documentation/pull_to_refresh/latest/pulltorefresh/SmartRefresher-class.html)
 - [自定义指示器](custom_indicator.md)
 - [指示器内部属性介绍](indicator_attribute.md)
 - [更新日志](CHANGELOG.md)

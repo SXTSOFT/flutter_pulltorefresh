@@ -3,8 +3,8 @@
     Email: peng8350@gmail.com
     createTime:2018-05-02 14:39
  */
-
-import 'package:flutter/foundation.dart';
+// ignore_for_file: INVALID_USE_OF_PROTECTED_MEMBER
+// ignore_for_file: INVALID_USE_OF_VISIBLE_FOR_TESTING_MEMBER
 import 'package:flutter/physics.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
@@ -25,6 +25,7 @@ import 'package:pull_to_refresh/src/internals/slivers.dart';
 // ignore: MUST_BE_IMMUTABLE
 class RefreshPhysics extends ScrollPhysics {
   final double maxOverScrollExtent, maxUnderScrollExtent;
+  final double topHitBoundary, bottomHitBoundary;
   final SpringDescription springDescription;
   final double dragSpeedRatio;
   final bool enableScrollWhenTwoLevel, enableScrollWhenRefreshCompleted;
@@ -43,6 +44,8 @@ class RefreshPhysics extends ScrollPhysics {
       this.springDescription,
       this.controller,
       this.dragSpeedRatio,
+      this.topHitBoundary,
+      this.bottomHitBoundary,
       this.enableScrollWhenRefreshCompleted,
       this.enableScrollWhenTwoLevel,
       this.maxOverScrollExtent})
@@ -56,20 +59,12 @@ class RefreshPhysics extends ScrollPhysics {
         springDescription: springDescription,
         dragSpeedRatio: dragSpeedRatio,
         enableScrollWhenTwoLevel: enableScrollWhenTwoLevel,
+        topHitBoundary: topHitBoundary,
+        bottomHitBoundary: bottomHitBoundary,
         controller: controller,
         enableScrollWhenRefreshCompleted: enableScrollWhenRefreshCompleted,
-        maxUnderScrollExtent: maxUnderScrollExtent ??
-            (ancestor is ClampingScrollPhysics ||
-                    (ancestor is AlwaysScrollableScrollPhysics &&
-                        defaultTargetPlatform != TargetPlatform.iOS)
-                ? 0.0
-                : double.infinity),
-        maxOverScrollExtent: maxOverScrollExtent ??
-            (ancestor is ClampingScrollPhysics ||
-                    (ancestor is AlwaysScrollableScrollPhysics &&
-                        defaultTargetPlatform != TargetPlatform.iOS)
-                ? 60.0
-                : double.infinity));
+        maxUnderScrollExtent: maxUnderScrollExtent,
+        maxOverScrollExtent: maxOverScrollExtent);
   }
 
   RenderViewport findViewport(BuildContext context) {
@@ -194,6 +189,7 @@ class RefreshPhysics extends ScrollPhysics {
 
   @override
   double applyBoundaryConditions(ScrollMetrics position, double value) {
+    final ScrollPosition scrollPosition = position;
     viewportRender ??=
         findViewport(controller.position?.context?.storageContext);
     bool notFull = position.minScrollExtent == position.maxScrollExtent;
@@ -224,7 +220,11 @@ class RefreshPhysics extends ScrollPhysics {
     if (enablePullUp) {
       final RenderSliverLoading sliverFooter = viewportRender.lastChild;
       bottomExtra = sliverFooter.geometry.scrollExtent != 0.0 ||
-              (notFull && controller.footerStatus == LoadStatus.noMore) ||
+              (notFull &&
+                  controller.footerStatus == LoadStatus.noMore &&
+                  !RefreshConfiguration.of(
+                          controller.position.context.storageContext)
+                      .enableLoadingWhenNoData) ||
               (notFull &&
                   (RefreshConfiguration.of(
                               controller.position.context.storageContext)
@@ -237,14 +237,22 @@ class RefreshPhysics extends ScrollPhysics {
         position.minScrollExtent - maxOverScrollExtent - topExtra;
     final double bottomBoundary =
         position.maxScrollExtent + maxUnderScrollExtent + bottomExtra;
-    if (maxOverScrollExtent != double.infinity &&
-        value < position.pixels &&
-        position.pixels <= topBoundary) // underscroll
-      return value - position.pixels;
-    if (maxUnderScrollExtent != double.infinity &&
-        bottomBoundary <= position.pixels &&
-        position.pixels < value) // overscroll
-      return value - position.pixels;
+
+    if (scrollPosition.activity is BallisticScrollActivity) {
+      if (topHitBoundary != double.infinity) {
+        if (value < -topHitBoundary && -topHitBoundary < position.pixels) {
+          // hit top edge
+          return value + topHitBoundary;
+        }
+      }
+      if (bottomHitBoundary != double.infinity) {
+        if (position.pixels < bottomHitBoundary + position.maxScrollExtent &&
+            bottomHitBoundary + position.maxScrollExtent < value) {
+          // hit bottom edge
+          return value - bottomHitBoundary - position.maxScrollExtent;
+        }
+      }
+    }
     if (maxOverScrollExtent != double.infinity &&
         value < topBoundary &&
         topBoundary < position.pixels) // hit top edge
@@ -254,6 +262,18 @@ class RefreshPhysics extends ScrollPhysics {
         bottomBoundary < value) {
       // hit bottom edge
       return value - bottomBoundary;
+    }
+
+    // check user is dragging,it is import,some devices may not bounce with different frame and time,bouncing return the different velocity
+    if (scrollPosition.activity is DragScrollActivity) {
+      if (maxOverScrollExtent != double.infinity &&
+          value < position.pixels &&
+          position.pixels <= topBoundary) // underscroll
+        return value - position.pixels;
+      if (maxUnderScrollExtent != double.infinity &&
+          bottomBoundary <= position.pixels &&
+          position.pixels < value) // overscroll
+        return value - position.pixels;
     }
     return 0.0;
   }

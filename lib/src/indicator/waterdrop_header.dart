@@ -9,6 +9,7 @@ import 'package:flutter/material.dart'
     hide RefreshIndicatorState, RefreshIndicator;
 import 'package:flutter/widgets.dart';
 import 'package:flutter/foundation.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../internals/indicator_wrap.dart';
 import 'package:flutter/cupertino.dart';
 import '../smart_refresher.dart';
@@ -122,7 +123,9 @@ class _WaterDropHeaderState extends RefreshIndicatorState<WaterDropHeader>
                 width: 15.0,
               ),
               Text(
-                "刷新完成",
+                (RefreshLocalizations.of(context)?.currentLocalization ??
+                        EnRefreshString())
+                    .refreshCompleteText,
                 style: TextStyle(color: Colors.grey),
               )
             ],
@@ -139,7 +142,11 @@ class _WaterDropHeaderState extends RefreshIndicatorState<WaterDropHeader>
               Container(
                 width: 15.0,
               ),
-              Text("刷新失败", style: TextStyle(color: Colors.grey))
+              Text(
+                  (RefreshLocalizations.of(context)?.currentLocalization ??
+                          EnRefreshString())
+                      .refreshFailedText,
+                  style: TextStyle(color: Colors.grey))
             ],
           );
     } else if (mode == RefreshStatus.idle || mode == RefreshStatus.canRefresh) {
